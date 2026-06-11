@@ -32,7 +32,6 @@ from tbh_helper.ui_theme import (
     SegmentedControl,
     StatusPill,
     StepRow,
-    StyledScrollbar,
     StyledScrolledText,
     SURFACE,
     SURFACE2,
@@ -106,8 +105,14 @@ class TBHApp(tk.Tk):
         header = tk.Frame(root, bg=BG)
         header.pack(fill=tk.X, pady=(0, 14))
         tk.Label(header, text="挂机助手", font=FONT_TITLE, bg=BG, fg=TEXT).pack(side=tk.LEFT)
-        self.game_pill = StatusPill(header)
-        self.game_pill.pack(side=tk.RIGHT)
+
+        right = tk.Frame(header, bg=BG)
+        right.pack(side=tk.RIGHT)
+        RoundedButton(
+            right, "📁 配置", self._open_config_dir, width=76, height=26, radius=8, style="ghost"
+        ).pack(side=tk.LEFT, padx=(0, 6))
+        self.game_pill = StatusPill(right)
+        self.game_pill.pack(side=tk.LEFT)
 
         # 分段切换
         self.page_run = tk.Frame(root, bg=BG)
@@ -126,9 +131,8 @@ class TBHApp(tk.Tk):
         self.page_run.pack(fill=tk.BOTH, expand=True)
         self._show_run()
 
-        # 布局定型后锁定窗口大小
+        # 布局定型
         self.update_idletasks()
-        self.resizable(False, False)
 
     def _build_run_page(self, parent: tk.Frame) -> None:
         card = Card(parent)
@@ -168,30 +172,8 @@ class TBHApp(tk.Tk):
         style_log(self.log_text.text)
 
     def _build_setup_page(self, parent: tk.Frame) -> None:
-        # 可滚动容器 Canvas + Scrollbar
-        canvas = tk.Canvas(parent, bg=BG, highlightthickness=0)
-        v_scroll = StyledScrollbar(parent, command=canvas.yview)
-        scrollable = tk.Frame(canvas, bg=BG)
-        scrollable.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas_window = canvas.create_window((0, 0), window=scrollable, anchor="nw", width=parent.winfo_width())
-
-        def _configure_canvas(event):
-            canvas.itemconfig(canvas_window, width=event.width)
-        canvas.bind("<Configure>", _configure_canvas)
-
-        canvas.configure(yscrollcommand=v_scroll.set)
-        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        v_scroll.pack(side=tk.RIGHT, fill=tk.Y)
-
-        # 鼠标滚轮绑定（跨平台）
-        def _on_mousewheel(event):
-            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
-        canvas.bind("<MouseWheel>", _on_mousewheel)
-        # Linux 支持
-        canvas.bind("<Button-4>", lambda e: canvas.yview_scroll(-3, "units"))
-        canvas.bind("<Button-5>", lambda e: canvas.yview_scroll(3, "units"))
-
-        scroll_outer = scrollable
+        scroll_outer = tk.Frame(parent, bg=BG)
+        scroll_outer.pack(fill=tk.BOTH, expand=True)
 
         # 步骤 1
         self.step_anchor = StepRow(scroll_outer, 1, "框选传送门", "拖拽选中地图面板区域")
@@ -225,8 +207,8 @@ class TBHApp(tk.Tk):
             stage_head, "＋ 添加", self._add_stage, width=72, height=28, radius=8, style="ghost"
         ).pack(side=tk.RIGHT)
 
-        self.stage_list = tk.Listbox(stage_card.inner, height=5, exportselection=False)
-        self.stage_list.pack(fill=tk.X, pady=(0, 8))
+        self.stage_list = tk.Listbox(stage_card.inner, exportselection=False)
+        self.stage_list.pack(fill=tk.BOTH, expand=True, pady=(0, 8))
         style_listbox(self.stage_list)
         self._load_stage_list()
 
@@ -610,6 +592,14 @@ class TBHApp(tk.Tk):
             self.game_pill.set_ok(True, "游戏在线")
         else:
             self.game_pill.set_ok(False, "未检测到游戏")
+
+    def _open_config_dir(self) -> None:
+        """在文件管理器中打开配置文件夹。"""
+        try:
+            import os
+            os.startfile(str(BASE_DIR))
+        except Exception as exc:
+            messagebox.showerror("错误", f"无法打开配置文件夹\n{exc}", parent=self)
 
     def _check_elevation(self) -> None:
         """启动时检测权限不匹配并提示。"""
