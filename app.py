@@ -539,7 +539,7 @@ class TBHApp(tk.Tk):
 
     def _chest_hint_text(self) -> str:
         c = ChestOpenConfig.from_dict(self.cfg.get("chest_open"))
-        if c.enabled and c.rel_x >= 0:
+        if c.enabled:
             return f"已标记 ({c.rel_x:.2f}, {c.rel_y:.2f})"
         return "换图前自动双击开宝箱"
 
@@ -990,7 +990,7 @@ class TBHApp(tk.Tk):
 
     def _normal_chest_hint_text(self) -> str:
         nc = ChestOpenConfig.from_dict(self.cfg.get("normal_chest"))
-        if nc.enabled and nc.rel_x >= 0:
+        if nc.enabled:
             return f"已标记 ({nc.rel_x:.2f}, {nc.rel_y:.2f})"
         return "每15分钟自动双击"
 
@@ -1036,9 +1036,6 @@ class TBHApp(tk.Tk):
             messagebox.showerror("错误", "请先框选传送门区域", parent=self)
             return False
         mx, my = get_cursor_pos()
-        if not self._anchor.contains_screen(mx, my):
-            messagebox.showwarning("位置警告", "鼠标不在传送门框选区域内，请移入框内再试。", parent=self)
-            return False
         rel_x, rel_y = self._anchor.screen_to_rel(mx, my)
         nc = ChestOpenConfig.from_dict(self.cfg.get("normal_chest"))
         nc.rel_x = max(0.0, min(1.0, round(rel_x, 4)))
@@ -1081,9 +1078,6 @@ class TBHApp(tk.Tk):
             messagebox.showerror("错误", "请先框选传送门区域", parent=self)
             return False
         mx, my = get_cursor_pos()
-        if not self._anchor.contains_screen(mx, my):
-            messagebox.showwarning("位置警告", "鼠标不在传送门框选区域内，请移入框内再试。", parent=self)
-            return False
         rel_x, rel_y = self._anchor.screen_to_rel(mx, my)
         chest = ChestOpenConfig.from_dict(self.cfg.get("chest_open"))
         chest.rel_x = max(0.0, min(1.0, round(rel_x, 4)))
