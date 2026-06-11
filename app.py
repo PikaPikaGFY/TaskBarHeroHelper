@@ -75,7 +75,7 @@ class TBHApp(tk.Tk):
         super().__init__()
         self.title("TaskBarHero")
         self.geometry("520x800")
-        self.minsize(480, 720)
+        self.minsize(480, 800)
         apply_root_style(self)
 
         self.cfg = load_config(CONFIG_PATH)
