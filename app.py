@@ -972,6 +972,13 @@ class TBHApp(tk.Tk):
         save_config(CONFIG_PATH, self.cfg)
         self.engine.cfg = self.cfg
         self.engine.chest = chest
+        # 同步写入 profile（引擎启动时优先读取 profile）
+        try:
+            profile = self._get_profile()
+            profile.chest_open = chest.to_dict()
+            self._save_profile(profile)
+        except Exception:
+            pass
         self.var_chest_enabled.set(chest.enabled)
         if hasattr(self, "var_chest_hint"):
             self.var_chest_hint.set(self._chest_hint_text())
@@ -995,6 +1002,13 @@ class TBHApp(tk.Tk):
         save_config(CONFIG_PATH, self.cfg)
         self.engine.cfg = self.cfg
         self.engine.normal_chest = nc
+        # 同步写入 profile
+        try:
+            profile = self._get_profile()
+            profile.normal_chest = nc.to_dict()
+            self._save_profile(profile)
+        except Exception:
+            pass
         self.var_norm_chest_enabled.set(nc.enabled)
         if hasattr(self, "var_norm_hint"):
             self.var_norm_hint.set(self._normal_chest_hint_text())
