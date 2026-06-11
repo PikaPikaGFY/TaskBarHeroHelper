@@ -87,13 +87,22 @@ class RotatorEngine:
             raise RuntimeError("请先框选传送门区域")
 
         self._profile = self.load_profile()
-        # 从 profile 加载宝箱配置（GUI 已运行时通过属性覆盖）
-        self.chest = ChestOpenConfig.from_dict(
-            self._profile.chest_open or self.cfg.get("chest_open") or {}
-        )
-        self.normal_chest = ChestOpenConfig.from_dict(
-            self._profile.normal_chest or self.cfg.get("normal_chest") or {}
-        )
+
+        # 加载宝箱配置
+        def _pick(d: dict | None, default_x: float, default_y: float) -> dict:
+            """从 profile 取配置，若为默认值则降级到 config.yaml。"""
+            d = d or {}
+            is_default = (
+                not d.get("enabled")
+                and d.get("rel", [default_x, default_y]) == [default_x, default_y]
+            )
+            if is_default:
+                fallback = self.cfg.get("chest_open" if default_y == 0.2 else "normal_chest") or {}
+                return fallback
+            return d
+
+        self.chest = ChestOpenConfig.from_dict(_pick(self._profile.chest_open, 0.5, 0.2))
+        self.normal_chest = ChestOpenConfig.from_dict(_pick(self._profile.normal_chest, 0.5, 0.5))
         self._dry_run = dry_run
         self._switch_count = 0
         self._stop.clear()
