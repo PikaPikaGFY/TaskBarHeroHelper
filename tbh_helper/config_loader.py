@@ -131,4 +131,5 @@ def build_rotator(
         delay_before_switch=float(rotation.get("delay_before_switch", 2.0)),
         delay_after_switch=float(rotation.get("delay_after_switch", 3.0)),
         min_switch_interval=float(rotation.get("min_switch_interval", 15.0)),
+        anchor=anchor if use_anchor else None,
     )

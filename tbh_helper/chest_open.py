@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass
+from typing import Optional
 
+from .anchor import AnchorRect
 from .mouse import double_click_at
 from .window import get_client_rect_screen
 
@@ -73,10 +75,14 @@ def double_click_window_rel(
     config: ChestOpenConfig | None = None,
     helper_hwnd: int | None = None,
     click_interval: float | None = None,
+    anchor: AnchorRect | None = None,
 ) -> tuple[int, int]:
     cfg = config or ChestOpenConfig()
-    rect = get_client_rect_screen(hwnd)
-    x, y = rect.to_screen(rel_x, rel_y)
+    if anchor is not None:
+        x, y = anchor.to_screen(rel_x, rel_y)
+    else:
+        rect = get_client_rect_screen(hwnd)
+        x, y = rect.to_screen(rel_x, rel_y)
     kwargs = _click_kwargs(cfg, helper_hwnd)
     if click_interval is not None:
         kwargs["click_interval"] = click_interval
@@ -89,6 +95,7 @@ def open_chest(
     config: ChestOpenConfig,
     *,
     helper_hwnd: int | None = None,
+    anchor: AnchorRect | None = None,
 ) -> tuple[int, int] | None:
     if not config.enabled:
         return None
@@ -100,6 +107,7 @@ def open_chest(
         config.rel_y,
         config=config,
         helper_hwnd=helper_hwnd,
+        anchor=anchor,
     )
     if config.delay_after > 0:
         time.sleep(config.delay_after)

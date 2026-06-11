@@ -47,11 +47,9 @@ from tbh_helper.mouse import click_at
 from tbh_helper.paths import app_dir, ensure_runtime_files, prompt_vc_runtime
 from tbh_helper.window import (
     find_game_window,
-    get_client_rect_screen,
     get_cursor_pos,
     is_process_elevated,
     is_self_elevated,
-    screen_to_client_rel,
 )
 
 BASE_DIR = ensure_runtime_files()
@@ -1034,19 +1032,14 @@ class TBHApp(tk.Tk):
         )
 
     def _capture_normal_chest_pos(self) -> bool:
-        hwnd = find_game_window(
-            process_name=self.cfg.get("game", {}).get("process_name", "TaskBarHero"),
-            pid=self.cfg.get("game", {}).get("pid"),
-        )
-        if not hwnd:
-            messagebox.showerror("错误", "找不到游戏窗口", parent=self)
+        if not self._anchor:
+            messagebox.showerror("错误", "请先框选传送门区域", parent=self)
             return False
         mx, my = get_cursor_pos()
-        try:
-            rel_x, rel_y = screen_to_client_rel(hwnd, mx, my)
-        except ValueError as exc:
-            messagebox.showerror("错误", str(exc), parent=self)
+        if not self._anchor.contains_screen(mx, my):
+            messagebox.showwarning("位置警告", "鼠标不在传送门框选区域内，请移入框内再试。", parent=self)
             return False
+        rel_x, rel_y = self._anchor.screen_to_rel(mx, my)
         nc = ChestOpenConfig.from_dict(self.cfg.get("normal_chest"))
         nc.rel_x = max(0.0, min(1.0, round(rel_x, 4)))
         nc.rel_y = max(0.0, min(1.0, round(rel_y, 4)))
@@ -1084,19 +1077,14 @@ class TBHApp(tk.Tk):
         )
 
     def _capture_chest_pos(self) -> bool:
-        hwnd = find_game_window(
-            process_name=self.cfg.get("game", {}).get("process_name", "TaskBarHero"),
-            pid=self.cfg.get("game", {}).get("pid"),
-        )
-        if not hwnd:
-            messagebox.showerror("错误", "找不到游戏窗口", parent=self)
+        if not self._anchor:
+            messagebox.showerror("错误", "请先框选传送门区域", parent=self)
             return False
         mx, my = get_cursor_pos()
-        try:
-            rel_x, rel_y = screen_to_client_rel(hwnd, mx, my)
-        except ValueError as exc:
-            messagebox.showerror("错误", str(exc), parent=self)
+        if not self._anchor.contains_screen(mx, my):
+            messagebox.showwarning("位置警告", "鼠标不在传送门框选区域内，请移入框内再试。", parent=self)
             return False
+        rel_x, rel_y = self._anchor.screen_to_rel(mx, my)
         chest = ChestOpenConfig.from_dict(self.cfg.get("chest_open"))
         chest.rel_x = max(0.0, min(1.0, round(rel_x, 4)))
         chest.rel_y = max(0.0, min(1.0, round(rel_y, 4)))

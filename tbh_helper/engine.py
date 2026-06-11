@@ -213,7 +213,7 @@ class RotatorEngine:
                 and not self._dry_run
                 and time.time() - last_interval_chest >= self.chest.interval_seconds
             ):
-                pos = open_chest(hwnd, self.chest, helper_hwnd=self.helper_hwnd)
+                pos = open_chest(hwnd, self.chest, helper_hwnd=self.helper_hwnd, anchor=self._anchor)
                 if pos:
                     self.log(f"[开宝箱] 定时双击 @ ({pos[0]},{pos[1]})")
                 last_interval_chest = time.time()
@@ -225,7 +225,7 @@ class RotatorEngine:
                 and not self._dry_run
                 and time.time() - last_normal_chest >= self.normal_chest.interval_seconds
             ):
-                pos = open_chest(hwnd, self.normal_chest, helper_hwnd=self.helper_hwnd)
+                pos = open_chest(hwnd, self.normal_chest, helper_hwnd=self.helper_hwnd, anchor=self._anchor)
                 if pos:
                     self.log(f"[普通宝箱] 定时双击 @ ({pos[0]},{pos[1]})")
                 last_normal_chest = time.time()
