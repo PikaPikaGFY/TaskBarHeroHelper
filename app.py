@@ -1038,8 +1038,8 @@ class TBHApp(tk.Tk):
         mx, my = get_cursor_pos()
         rel_x, rel_y = self._anchor.screen_to_rel(mx, my)
         nc = ChestOpenConfig.from_dict(self.cfg.get("normal_chest"))
-        nc.rel_x = max(0.0, min(1.0, round(rel_x, 4)))
-        nc.rel_y = max(0.0, min(1.0, round(rel_y, 4)))
+        nc.rel_x = round(rel_x, 4)
+        nc.rel_y = round(rel_y, 4)
         nc.enabled = True
         nc.interval_seconds = 900
         self._update_normal_chest_config(nc)
@@ -1080,8 +1080,8 @@ class TBHApp(tk.Tk):
         mx, my = get_cursor_pos()
         rel_x, rel_y = self._anchor.screen_to_rel(mx, my)
         chest = ChestOpenConfig.from_dict(self.cfg.get("chest_open"))
-        chest.rel_x = max(0.0, min(1.0, round(rel_x, 4)))
-        chest.rel_y = max(0.0, min(1.0, round(rel_y, 4)))
+        chest.rel_x = round(rel_x, 4)
+        chest.rel_y = round(rel_y, 4)
         chest.enabled = True
         self._update_chest_config(chest)
         self._append_log(f">>> 开宝箱 ({chest.rel_x}, {chest.rel_y})")
