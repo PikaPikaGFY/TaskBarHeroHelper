@@ -28,6 +28,13 @@ class PortalProfile:
     stages: list[dict[str, Any]] = field(default_factory=list)
     chest_open: dict[str, Any] = field(default_factory=dict)
     normal_chest: dict[str, Any] = field(default_factory=dict)
+    warehouse_tab_pages: list[dict[str, Any]] = field(default_factory=list)
+    warehouse_transfer_btn: list[float] | None = None
+    mailbox_buttons: dict[str, list[float]] = field(default_factory=dict)
+    fold_expand_btn: list[float] | None = None
+    fold_portal_btn: list[float] | None = None
+    fold_warehouse_btn: list[float] | None = None
+    fold_confirm_btn: list[float] | None = None
 
     def save(self, path: Path) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -48,6 +55,13 @@ class PortalProfile:
             "stages": self.stages,
             "chest_open": self.chest_open,
             "normal_chest": self.normal_chest,
+            "warehouse_tab_pages": self.warehouse_tab_pages,
+            "warehouse_transfer_btn": self.warehouse_transfer_btn,
+            "mailbox_buttons": self.mailbox_buttons,
+            "fold_expand_btn": self.fold_expand_btn,
+            "fold_portal_btn": self.fold_portal_btn,
+            "fold_warehouse_btn": self.fold_warehouse_btn,
+            "fold_confirm_btn": self.fold_confirm_btn,
         }
         with path.open("w", encoding="utf-8") as f:
             yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)
@@ -114,6 +128,13 @@ class PortalProfile:
             stages=list(data.get("stages", [])),
             chest_open=dict(data.get("chest_open", {})),
             normal_chest=dict(data.get("normal_chest", {})),
+            warehouse_tab_pages=list(data.get("warehouse_tab_pages", [])),
+            warehouse_transfer_btn=data.get("warehouse_transfer_btn"),
+            mailbox_buttons=dict(data.get("mailbox_buttons", {})),
+            fold_expand_btn=data.get("fold_expand_btn"),
+            fold_portal_btn=data.get("fold_portal_btn"),
+            fold_warehouse_btn=data.get("fold_warehouse_btn"),
+            fold_confirm_btn=data.get("fold_confirm_btn"),
         )
 
     def capture_template(self, anchor: AnchorRect, save_path: Path) -> str:

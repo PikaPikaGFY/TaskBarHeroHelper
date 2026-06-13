@@ -14,7 +14,8 @@ class StageRecord:
     name: str = ""
     visits: int = 0           # 游玩次数（导航到此关的次数）
     boss_drops: int = 0       # Boss 箱掉落次数
-    boss_time_sum: float = 0.0   # 从进关到出 Boss 箱的累计秒数
+    boss_time_sum: float = 0.0   # 从进关到出 Boss 箱的累计秒数（跨多次访问累加）
+    accumulated_wait: float = 0.0  # 被切关/跳过关卡时积累的等待时间
     cycle_sum: float = 0.0       # 两次轮回到同一关的累计间隔秒数
     last_visit_at: float = 0.0   # 上次进入该关的时间戳
 
@@ -94,6 +95,8 @@ class StatisticsTracker:
                 elapsed = now - self._current_entered_at
                 rec = self._records.get(self._current_stage)
                 if rec:
+                    # 上一关没有掉 Boss 箱，把等待时间累计到 accumulated_wait 中
+                    rec.accumulated_wait += elapsed
                     rec.total_seconds = getattr(rec, "total_seconds", 0) + elapsed
                 self.summary.total_seconds += elapsed
 
@@ -117,7 +120,10 @@ class StatisticsTracker:
                 )
                 rec.boss_drops += 1
                 if self._current_entered_at:
-                    rec.boss_time_sum += now - self._current_entered_at
+                    # 把之前多次访问积累的等待时间 + 本次进关到出箱的时间 都算进去
+                    total = rec.accumulated_wait + (now - self._current_entered_at)
+                    rec.boss_time_sum += total
+                    rec.accumulated_wait = 0.0  # 清零，下次重新积累
                 self.summary.total_boss_drops += 1
 
     def exit_stage(self) -> None:
@@ -127,6 +133,7 @@ class StatisticsTracker:
                 elapsed = now - self._current_entered_at
                 rec = self._records.get(self._current_stage)
                 if rec:
+                    rec.accumulated_wait += elapsed
                     rec.total_seconds = getattr(rec, "total_seconds", 0) + elapsed
                 self.summary.total_seconds += elapsed
             self._current_stage = ""

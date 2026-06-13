@@ -94,7 +94,9 @@ def _click_postmessage(hwnd: int, screen_x: int, screen_y: int, *, hold: float) 
     if not target or not win32gui.IsWindow(target):
         target = hwnd
 
-    packed = win32api.MAKELONG(screen_x & 0xFFFF, screen_y & 0xFFFF)
+    # PostMessage 的 lParam 需要客户区坐标，而非屏幕坐标
+    cx, cy = win32gui.ScreenToClient(target, (screen_x, screen_y))
+    packed = win32api.MAKELONG(cx & 0xFFFF, cy & 0xFFFF)
     win32gui.PostMessage(target, WM_LBUTTONDOWN, MK_LBUTTON, packed)
     if hold > 0:
         time.sleep(hold)

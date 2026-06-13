@@ -398,6 +398,7 @@ class StyledScrollbar(tk.Canvas):
         super().__init__(
             parent,
             width=self.WIDTH,
+            height=0,  # 不贡献父容器高度，由 fill=tk.Y 拉伸
             bg=BG,
             highlightthickness=0,
             **kwargs,
@@ -474,3 +475,169 @@ class StyledScrolledText(tk.Frame):
 
         self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+
+class StatusFlow(tk.Frame):
+    """水平流程状态条，用 Canvas 绘制节点 + 连线。"""
+
+    NODE_W = 86
+    NODE_H = 30
+    COL_GAP = 28
+
+    _DONE_BG = "#2E7D32"
+    _DONE_FG = "#FFFFFF"
+    _CURRENT_BG = ACCENT
+    _CURRENT_FG = "#FFFFFF"
+    _PENDING_BG = SURFACE2
+    _PENDING_FG = TEXT2
+    _ARROW_DONE = "#4CAF50"
+    _ARROW_NEXT = "#FF9800"
+    _ARROW_PENDING = "#444444"
+
+    def __init__(self, parent: tk.Misc, **kwargs) -> None:
+        super().__init__(parent, bg=BG, height=86, **kwargs)
+        self.pack_propagate(False)
+        self.canvas = tk.Canvas(self, bg=BG, highlightthickness=0)
+        self.canvas.pack(fill=tk.BOTH, expand=True)
+        self._state = "idle"
+        self._data: dict = {}
+        self._queue: list[tuple[str, dict]] = []
+        self._animating = False
+
+        self.canvas.bind("<Configure>", lambda _: self._redraw())
+
+    def show(self, state: str, **data) -> None:
+        self._state = state
+        self._data = data
+        self.after_idle(self._redraw)
+
+    # ── 节点定义 ──────────────────────────────────────────
+
+    def _build_nodes(self) -> list[dict]:
+        s = self._state
+        d = self._data
+        stage = d.get("stage", "")
+        target = d.get("target", "")
+
+        if s == "idle":
+            return [{"label": "待机中", "status": "current"}]
+
+        if s in ("fighting",):
+            return [
+                {"label": f"刷关 {stage}", "status": "current"},
+                {"label": "等待掉落", "status": "pending"},
+                {"label": "检测箱子", "status": "pending"},
+            ]
+
+        if s == "waiting":
+            return [
+                {"label": f"刷关 {stage}", "status": "done"},
+                {"label": "等待掉落", "status": "current"},
+                {"label": "检测箱子", "status": "pending"},
+            ]
+
+        if s == "detected":
+            return [
+                {"label": f"刷关 {stage}", "status": "done"},
+                {"label": "等待掉落", "status": "done"},
+                {"label": "检测箱子", "status": "current",
+                 "branch": ("是→换关", "否→等待")},
+                {"label": "换关", "status": "pending"},
+            ]
+
+        if s == "switching":
+            return [
+                {"label": f"刷关 {stage}", "status": "done"},
+                {"label": "等待掉落", "status": "done"},
+                {"label": "检测箱子", "status": "done"},
+                {"label": f"换关 {target}", "status": "current"},
+            ]
+
+        if s == "mailbox":
+            return [
+                {"label": f"刷关 {stage}", "status": "done"},
+                {"label": "超时", "status": "done"},
+                {"label": "查邮箱", "status": "current"},
+                {"label": "等待掉落", "status": "pending"},
+            ]
+
+        if s == "warehouse":
+            return [
+                {"label": f"刷关 {stage}", "status": "done"},
+                {"label": "存仓库", "status": "current"},
+                {"label": "刷关", "status": "pending"},
+            ]
+
+        if s == "timeout_switch":
+            return [
+                {"label": f"刷关 {stage}", "status": "done"},
+                {"label": "超时", "status": "done"},
+                {"label": f"换关 {target}", "status": "current"},
+            ]
+
+        return []
+
+    # ── 绘制 ──────────────────────────────────────────────
+
+    def _node_color(self, status: str) -> tuple[str, str]:
+        if status == "done":
+            return self._DONE_BG, self._DONE_FG
+        if status == "current":
+            return self._CURRENT_BG, self._CURRENT_FG
+        return self._PENDING_BG, self._PENDING_FG
+
+    def _redraw(self) -> None:
+        c = self.canvas
+        c.delete("all")
+        cw = max(c.winfo_width(), 100)
+        cy = 42  # vertical center
+
+        nodes = self._build_nodes()
+        if not nodes:
+            return
+
+        n = len(nodes)
+        total_w = n * self.NODE_W + (n - 1) * self.COL_GAP
+        ox = max(10, (cw - total_w) // 2)
+
+        for i, nd in enumerate(nodes):
+            x = ox + i * (self.NODE_W + self.COL_GAP)
+
+            # 箭头（画在节点之前，位于下层）
+            if i > 0:
+                px = ox + (i - 1) * (self.NODE_W + self.COL_GAP) + self.NODE_W
+                prev = nodes[i - 1]
+                arrow_color = self._ARROW_DONE
+                if prev.get("status") == "current":
+                    arrow_color = self._ARROW_NEXT
+                elif prev.get("status") == "pending":
+                    arrow_color = self._ARROW_PENDING
+                # 若前一个节点有分支标注，改为橙色强调
+                if prev.get("branch"):
+                    arrow_color = self._ARROW_NEXT
+                self._draw_arrow(c, px, cy, x, cy, arrow_color)
+
+                # 分支标注
+                branch = prev.get("branch")
+                if branch:
+                    mx = (px + x) // 2
+                    c.create_text(mx, cy - 18, text=branch[0],
+                                  fill=self._ARROW_NEXT, font=FONT_UI)
+                    c.create_text(mx, cy + 18, text=branch[1],
+                                  fill=TEXT2, font=FONT_UI)
+
+            # 节点
+            bg, fg = self._node_color(nd.get("status", "pending"))
+            r = 6
+            _round_rect(c, x, cy - self.NODE_H // 2, x + self.NODE_W,
+                        cy + self.NODE_H // 2, r, fill=bg)
+            c.create_text(x + self.NODE_W // 2, cy, text=nd["label"],
+                          fill=fg, font=FONT_UI)
+
+    def _draw_arrow(self, c: tk.Canvas, x1: int, y1: int,
+                    x2: int, y2: int, color: str) -> None:
+        c.create_line(x1, y1, x2, y2, fill=color, width=2)
+        # 三角箭头
+        ah = 6
+        c.create_polygon(x2, y2, x2 - ah, y2 - 4, x2 - ah, y2 + 4,
+                         fill=color, outline="")

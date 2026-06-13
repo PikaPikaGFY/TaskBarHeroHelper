@@ -8,3 +8,5 @@ config.yaml
 profiles/
 !profiles/portal_profile.default.yaml
 *.png
+_dump/
+_tools/
