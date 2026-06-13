@@ -57,23 +57,59 @@ def _pid_for_hwnd(hwnd: int) -> int:
 
 
 def find_game_window(process_name: str = "TaskBarHero", pid: Optional[int] = None) -> Optional[int]:
-    matches: list[int] = []
+    """通过进程可执行文件名（如 taskbarhero.exe）查找游戏窗口，不依赖窗口标题。"""
+    import psutil
+
+    target_exe = process_name.lower()
+    if not target_exe.endswith(".exe"):
+        target_exe += ".exe"
+
+    # 如果给了 pid，优先验证
+    if pid is not None:
+        try:
+            proc = psutil.Process(pid)
+            if proc.name().lower() == target_exe:
+                # 找该 pid 下第一个可见窗口
+                for hwnd in _enum_windows_for_pid(pid):
+                    return hwnd
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            pass
+
+    # 遍历所有进程，匹配 exe 名
+    for proc in psutil.process_iter(["pid", "name"]):
+        try:
+            if proc.info["name"] and proc.info["name"].lower() == target_exe:
+                hwnd = _find_window_for_process(proc.info["pid"])
+                if hwnd:
+                    return hwnd
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+    return None
+
+
+def _enum_windows_for_pid(pid: int) -> list[int]:
+    """枚举指定 pid 下的所有顶层可见窗口。"""
+    result: list[int] = []
 
     def callback(hwnd, _):
-        if not win32gui.IsWindowVisible(hwnd):
-            return True
-        title = win32gui.GetWindowText(hwnd)
-        if process_name.lower() not in title.lower():
-            return True
-        if pid is not None and _pid_for_hwnd(hwnd) != pid:
-            return True
-        matches.append(hwnd)
+        if win32gui.IsWindowVisible(hwnd):
+            try:
+                _, p = win32process.GetWindowThreadProcessId(hwnd)
+                if p == pid:
+                    result.append(hwnd)
+            except Exception:
+                pass
         return True
 
     win32gui.EnumWindows(callback, None)
-    if not matches:
-        return None
-    return matches[0]
+    return result
+
+
+def _find_window_for_process(pid: int) -> Optional[int]:
+    """查找指定 pid 下第一个可见窗口。"""
+    for hwnd in _enum_windows_for_pid(pid):
+        return hwnd
+    return None
 
 
 def get_window_rect(hwnd: int) -> WindowRect:

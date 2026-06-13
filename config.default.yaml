@@ -1,5 +1,5 @@
 game:
-  process_name: TaskBarHero
+  process_name: taskbarhero.exe
   pid: null
 log:
   path: '%LOCALAPPDATA%/../LocalLow/TesseractStudio/TaskbarHero/Player.log'
@@ -13,6 +13,7 @@ rotation:
   delay_before_switch: 2.0
   delay_after_switch: 3.0
   min_switch_interval: 15.0
+  stage_timeout_minutes: 0
 chest_open:
   enabled: false
   rel:
@@ -38,9 +39,16 @@ normal_chest:
   move_delay: 0.08
   click_hold: 0.05
 portal:
-  use_anchor: true
   profile: profiles/portal_profile.yaml
   open_before_switch: false
   button_rel:
   - 0.52
   - 0.92
+  window_rect: null
+warehouse:
+  enabled: false
+  interval_minutes: 30
+mailbox_check:
+  enabled: false
+fold_page:
+  mode: always_expand

@@ -84,7 +84,10 @@ def open_countdown_capture_dialog(
 
     ttk.Button(btn_row, text="立即记录", command=do_capture).pack(side=tk.LEFT, padx=4)
     if on_skip:
-        ttk.Button(btn_row, text="跳过", command=on_skip).pack(side=tk.LEFT, padx=4)
+        ttk.Button(
+            btn_row, text="跳过",
+            command=lambda: (on_skip(), close_dialog()),
+        ).pack(side=tk.LEFT, padx=4)
     ttk.Button(btn_row, text="取消", command=close_dialog).pack(side=tk.LEFT, padx=4)
     dlg.protocol("WM_DELETE_WINDOW", close_dialog)
     tick(seconds)

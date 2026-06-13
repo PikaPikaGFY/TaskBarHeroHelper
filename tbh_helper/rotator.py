@@ -3,6 +3,7 @@ from __future__ import annotations
 import time
 from typing import Optional
 
+from .anchor import AnchorRect
 from .chest_open import ChestOpenConfig, open_chest
 from .log_watcher import BoxDropEvent
 from .portal import PortalNavigator, StageTarget
@@ -20,6 +21,7 @@ class MapRotator:
         delay_before_switch: float = 2.0,
         delay_after_switch: float = 3.0,
         min_switch_interval: float = 15.0,
+        anchor: AnchorRect | None = None,
     ) -> None:
         if not stages:
             raise ValueError("至少配置一个轮换关卡")
@@ -28,6 +30,7 @@ class MapRotator:
         self.hwnd = hwnd
         self.helper_hwnd = helper_hwnd
         self.chest = chest or ChestOpenConfig()
+        self.anchor = anchor
         self.delay_before_switch = delay_before_switch
         self.delay_after_switch = delay_after_switch
         self.min_switch_interval = min_switch_interval
@@ -42,7 +45,7 @@ class MapRotator:
     def open_chest_if_enabled(self) -> tuple[int, int] | None:
         if not self.chest.enabled:
             return None
-        pos = open_chest(self.hwnd, self.chest, helper_hwnd=self.helper_hwnd)
+        pos = open_chest(self.hwnd, self.chest, helper_hwnd=self.helper_hwnd, anchor=self.anchor)
         if pos:
             print(f"[开宝箱] 双击 @ ({pos[0]},{pos[1]})")
         return pos

@@ -100,16 +100,10 @@ def build_rotator(
     button_rel = portal.get("button_rel", [0.52, 0.92])
     window_rect = get_client_rect_screen(hwnd)
 
-    use_anchor = bool(portal.get("use_anchor", True)) and anchor is not None and profile is not None
-
-    if use_anchor:
-        ui = profile.to_portal_ui()
-        stages = profile.to_stage_targets()
-        coord_space = anchor
-    else:
-        ui = build_portal_ui(portal)
-        stages = build_stage_targets(cfg.get("stages", []))
-        coord_space = window_rect
+    # 使用锚点 + profile 模式
+    ui = profile.to_portal_ui()
+    stages = profile.to_stage_targets()
+    coord_space = anchor
 
     navigator = PortalNavigator(
         ui,
@@ -131,4 +125,5 @@ def build_rotator(
         delay_before_switch=float(rotation.get("delay_before_switch", 2.0)),
         delay_after_switch=float(rotation.get("delay_after_switch", 3.0)),
         min_switch_interval=float(rotation.get("min_switch_interval", 15.0)),
+        anchor=anchor,
     )
